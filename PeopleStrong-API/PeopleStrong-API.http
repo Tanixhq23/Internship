@@ -1,0 +1,6 @@
+@PeopleStrong_API_HostAddress = http://localhost:5035
+
+GET {{PeopleStrong_API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
