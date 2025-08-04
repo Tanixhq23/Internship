@@ -1,3 +1,5 @@
 .vs
 obj
 node_modules/
+*/bin/*
+*/obj/*
