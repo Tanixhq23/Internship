@@ -9,6 +9,19 @@ namespace Data
     {
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options) { }
         public DbSet<User> Users { get; set; }
+        public DbSet<Role> Roles { get; set; }
+        public DbSet<Employee> Employees { get; set; }
+        public DbSet<Department> Departments { get; set; }
+        public DbSet<LeaveRequest> LeaveRequests { get; set; }
+        public DbSet<LeaveType> LeaveTypes { get; set; }
+        public DbSet<LeaveBalance> LeaveBalances { get; set; }
+        public DbSet<AttendanceRecord> AttendanceRecords { get; set; }  
+        public DbSet<Shifts> Shifts { get; set; }
+        public DbSet<LifeCycleTask> LifeCycleTasks { get; set; }
+        public DbSet<JobOpenings> JobOpenings { get; set; }
+        public DbSet<Refferals> Refferals { get; set; }
+        public DbSet<Candidates> Candidates { get; set; }
+
         public ApplicationContext() : base()
         {
         }
