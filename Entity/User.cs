@@ -15,7 +15,6 @@ namespace Entity
 
         public string FullName { get; set; } = string.Empty;
 
-
         // The hashed password.
         [Required]
         public string Email { get; set; } = string.Empty;
