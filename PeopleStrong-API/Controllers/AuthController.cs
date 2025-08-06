@@ -26,17 +26,14 @@ namespace PeopleStrong_API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
         {
-            try
+            var response = await _authService.RegisterAsync(dto);
+
+            if (!response.Success)
             {
-                // Optional: Manual Mapping if AutoMapper causes issues
-                var user = _mapper.Map<User>(dto); // Ensure mapping is configured
-                var token = await _authService.RegisterAsync(dto); // If RegisterAsync needs RegisterDto
-                return Ok(new { Token = token });
+                return BadRequest(response);
             }
-            catch (Exception ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+
+            return Ok(response);
         }
 
         [HttpPost("login")]
@@ -44,7 +41,7 @@ namespace PeopleStrong_API.Controllers
         {
             try
             {
-                var token = await _authService.LoginAsync(dto);
+                var token = await _authService.RegisterAsync(dto);
                 return Ok(new { Token = token });
             }
             catch (Exception ex)
@@ -61,15 +58,19 @@ namespace PeopleStrong_API.Controllers
             return Ok(new { Message = $"Welcome, {userName}!" });
         }
 
-        [HttpGet("{id}")]
-        public async Task<ActionResult<ServiceResponse<UserDto>>> GetUserById(int id)
+        [HttpGet("{id:guid}")]
+        public async Task<ActionResult<ServiceResponse<UserDto>>> GetUserById(Guid id)
         {
-            var response = await _userService.GetUserByIdAsync(id);
+            var response = await _authService.GetUserByIdAsync(id);
+            if (response == null)
+            {
+                return NotFound(new ServiceResponse<UserDto> { Success = false, Message = "User not found." });
+            }
 
             if (!response.Success)
+            {
                 return NotFound(response);
-
-            return Ok(response);
+            }
         }
     }
 }

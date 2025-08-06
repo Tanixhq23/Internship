@@ -6,14 +6,6 @@ using Microsoft.IdentityModel.Tokens;
 using Services;
 using Services.Interfaces;
 using System.Text;
-using DTO.Mappers;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.OpenApi.Models;
-using AutoMapper;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,19 +45,30 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
+// Add services to the container.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
 
-// Configure DbContext
-builder.Services.AddDbContext<ApplicationContext>(opt =>
-    opt.UseMySql(builder.Configuration["ConnectionStrings:DefaultConnection"],
-        new MySqlServerVersion(new Version(8, 0, 36)), x => x.MigrationsAssembly("Database"))
-    );
-builder.Services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
+// Use your extension methods to configure services
+builder.Services.AddSwaggerDocumentation();
+builder.Services.AddApplicationServices();
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
 
-// Configure JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+// Register your custom exception handler as a transient service
+builder.Services.AddTransient<GlobalExceptionHandler>();
+
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+
+// Use the GlobalExceptionHandler middleware very early in the pipeline
+// to catch exceptions from subsequent middleware.
+app.UseMiddleware<GlobalExceptionHandler>();
+
+builder.Services.AddAuthentication("Bearer")
+    .AddJwtBearer("Bearer", options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -81,21 +84,3 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthentication();
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();

@@ -5,8 +5,8 @@ namespace Services.Interfaces
 {
     public interface IAuthService
     {
-        Task<string> RegisterAsync(RegisterDto registerDto);
-        Task<string> LoginAsync(LoginDto loginDto);
-        Task<ServiceResponse<UserDto>> GetUserByIdAsync(int id);
+        Task<ServiceResponse<bool>> RegisterAsync(RegisterDto registerDto);
+        Task<ServiceResponse<string>> LoginAsync(LoginDto loginDto);
+        Task<ServiceResponse<UserDto>> GetUserByIdAsync(Guid id);
     }
 }

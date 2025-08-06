@@ -9,19 +9,25 @@ namespace Entity
         public Guid UserId { get; set; } = Guid.NewGuid();
 
         // The user's unique username.
-        [Required]
-        [StringLength(255)]
-        public string UserName { get; set; }
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(50, ErrorMessage = "Username cannot exceed 50 characters.")]
+        public string? UserName { get; set; }
 
-        public string FullName { get; set; } = string.Empty;
+        [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters.")]
+        public string? FullName { get; set; } = string.Empty;
 
-        // The hashed password.
-        [Required]
-        public string Email { get; set; } = string.Empty;
-        [Required]
-        public byte[] PasswordHash { get; set; }
-        [Required]
-        public byte[] PasswordSalt { get; set; }
+        // The user's email address, with validation.
+        [Required(ErrorMessage = "Email address is required.")]
+        [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters.")]
+        [EmailAddress(ErrorMessage = "Invalid email address format.")]
+        public string? Email { get; set; } = string.Empty;
+
+        // The hashed password and salt.
+        [Required(ErrorMessage = "Password hash is required.")]
+        public byte[]? PasswordHash { get; set; }
+
+        [Required(ErrorMessage = "Password salt is required.")]
+        public byte[]? PasswordSalt { get; set; }
 
         // Foreign Key to the Role table.
         [ForeignKey("Role")]

@@ -3,7 +3,6 @@ using Common;
 using Data.Interfaces;
 using DTO;
 using Entity;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services.Interfaces;
@@ -12,6 +11,8 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
+
+ 
 namespace Services
 {
     public class AuthService : IAuthService
@@ -27,14 +28,15 @@ namespace Services
             _mapper = mapper;
         }
 
-        public async Task<string> RegisterAsync(RegisterDto registerDto)
+        public async Task<ServiceResponse<bool>> RegisterAsync(RegisterDto registerDto)
         {
+            var response = new ServiceResponse<bool>();
+
             var existingUser = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
             if (existingUser != null)
-                throw new Exception("User with this email already exists.");
+                throw new Exception("User already exists.");
 
             CreatePasswordHash(registerDto.Password, out byte[] hash, out byte[] salt);
-
             var user = _mapper.Map<User>(registerDto);
             user.PasswordHash = hash;
             user.PasswordSalt = salt;
@@ -42,7 +44,53 @@ namespace Services
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.CompleteAsync();
 
-            return CreateJwtToken(user);
+            response.Data = true;
+            response.Message = "User registered successfully!";
+            return response;
+        }
+
+        public async Task<ServiceResponse<string>> LoginAsync(LoginDto loginDto)
+        {
+            var response = new ServiceResponse<string>();
+
+            var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
+            if (user == null)
+            {
+                response.Success = false;
+                response.Message = "Invalid credentials.";
+                return response;
+            }
+
+            var user = new User
+            {
+                FullName = registerDto.FullName,
+                Email = registerDto.Email,
+                PasswordHash = hash,
+                PasswordSalt = salt
+            };
+
+            response.Data = CreateJwtToken(user);
+            response.Message = "Login successful!";
+            return response;
+        }
+
+        // Corrected to accept a Guid ID
+        public async Task<ServiceResponse<UserDto>> GetUserByIdAsync(Guid id)
+        {
+            var response = new ServiceResponse<UserDto>();
+            // Assuming your User entity has a UserId property of type Guid
+            var user = await _unitOfWork.Users.GetAsync(u => u.UserId == id);
+
+            if (user == null)
+            {
+                response.Success = false;
+                response.Message = "User not found.";
+                return response;
+            }
+
+            response.Data = _mapper.Map<UserDto>(user);
+            response.Message = "User fetched successfully.";
+            return response;
         }
 
         public async Task<string> LoginAsync(LoginDto loginDto)
@@ -82,10 +130,7 @@ namespace Services
         {
             var claims = new[]
             {
-                // Use NameIdentifier for the User's unique ID
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                // Use Name for the user's display name
-                new Claim(ClaimTypes.Name, user.UserName),
                 new Claim(ClaimTypes.Email, user.Email),
             };
 
@@ -97,23 +142,6 @@ namespace Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-
-        public async Task<ServiceResponse<UserDto>> GetUserByIdAsync(int id)
-        {
-            var response = new ServiceResponse<UserDto>();
-            var user = await _unitOfWork.Users.FindAsync(id);
-
-            if (user == null)
-            {
-                response.Success = false;
-                response.Message = "User not found";
-                return response;
-            }
-
-            response.Data = _mapper.Map<UserDto>(user);
-            response.Message = "User fetched successfully";
-            return response;
         }
     }
 }
