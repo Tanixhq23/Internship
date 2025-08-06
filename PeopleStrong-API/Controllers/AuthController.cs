@@ -41,7 +41,7 @@ namespace PeopleStrong_API.Controllers
         {
             try
             {
-                var token = await _authService.RegisterAsync(dto);
+                var token = await _authService.LoginAsync(dto);
                 return Ok(new { Token = token });
             }
             catch (Exception ex)
@@ -71,6 +71,8 @@ namespace PeopleStrong_API.Controllers
             {
                 return NotFound(response);
             }
+
+            return Ok(response);
         }
     }
 }

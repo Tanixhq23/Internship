@@ -3,6 +3,7 @@ using Common;
 using Data.Interfaces;
 using DTO;
 using Entity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Services.Interfaces;
@@ -11,8 +12,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 
-
- 
 namespace Services
 {
     public class AuthService : IAuthService
@@ -34,7 +33,11 @@ namespace Services
 
             var existingUser = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
             if (existingUser != null)
-                throw new Exception("User already exists.");
+            {
+                response.Success = false;
+                response.Message = "User with this email already exists.";
+                return response;
+            }
 
             CreatePasswordHash(registerDto.Password, out byte[] hash, out byte[] salt);
             var user = _mapper.Map<User>(registerDto);
@@ -61,13 +64,12 @@ namespace Services
                 return response;
             }
 
-            var user = new User
+            if (!VerifyPasswordHash(loginDto.Password, user.PasswordHash, user.PasswordSalt))
             {
-                FullName = registerDto.FullName,
-                Email = registerDto.Email,
-                PasswordHash = hash,
-                PasswordSalt = salt
-            };
+                response.Success = false;
+                response.Message = "Invalid credentials.";
+                return response;
+            }
 
             response.Data = CreateJwtToken(user);
             response.Message = "Login successful!";
@@ -93,25 +95,6 @@ namespace Services
             return response;
         }
 
-        public async Task<string> LoginAsync(LoginDto loginDto)
-        {
-            // Find the user by email
-            var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
-            if (user == null)
-            {
-                throw new Exception("Invalid credentials.");
-            }
-
-            // Verify the password
-            if (!VerifyPasswordHash(loginDto.Password, user.PasswordHash, user.PasswordSalt))
-            {
-                throw new Exception("Invalid credentials.");
-            }
-
-            // If the password is correct, create and return a JWT
-            return CreateJwtToken(user);
-        }
-
         private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)
         {
             using var hmac = new HMACSHA512();
@@ -130,7 +113,9 @@ namespace Services
         {
             var claims = new[]
             {
+                // Corrected to handle a Guid UserId
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.UserName ?? user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
             };
 
@@ -142,6 +127,10 @@ namespace Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+        }
+        public Task<ServiceResponse<UserDto>> GetUserByIdAsync(int id)
+        {
+            throw new NotImplementedException();
         }
     }
 }

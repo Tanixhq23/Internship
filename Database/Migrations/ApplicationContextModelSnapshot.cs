@@ -503,6 +503,8 @@ namespace Database.Migrations
                         .HasColumnType("char(36)");
 
                     b.Property<string>("FullName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
                     b.Property<byte[]>("PasswordHash")
                         .IsRequired()
@@ -523,6 +525,8 @@ namespace Database.Migrations
 
                     b.Property<string>("UserName")
                         .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.HasKey("UserId");
 
