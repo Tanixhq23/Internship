@@ -13,7 +13,12 @@ namespace Data.Repositories
     {
         public UserRepository(ApplicationContext context) : base(context)
         {
-            
+
+        }
+
+        public Task GetUserByIdAsync(int id)
+        {
+            throw new NotImplementedException();
         }
     }
 }

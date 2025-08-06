@@ -15,4 +15,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Database\Database.csproj" />
+    <ProjectReference Include="..\DTO\DTO.csproj" />
+  </ItemGroup>
+
 </Project>
