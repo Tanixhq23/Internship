@@ -24,30 +24,35 @@ namespace PeopleStrong_API.Controllers
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        public async Task<ActionResult<ServiceResponse<bool>>> Register([FromBody] RegisterDto registerdto)
         {
-            var response = await _authService.RegisterAsync(dto);
+            var isSuccess = await _authService.RegisterAsync(registerdto);
+            var response = new ServiceResponse<bool>();
 
-            if (!response.Success)
+            if (!isSuccess)
             {
+                response.Response(false, "User with this email already exists.", false);
                 return BadRequest(response);
             }
 
+            response.Response(true, "User registered successfully.", true);
             return Ok(response);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginDto dto)
+        public async Task<ActionResult<ServiceResponse<string>>> Login([FromBody] LoginDto logindto)
         {
-            try
+            var token = await _authService.LoginAsync(logindto);
+            var response = new ServiceResponse<string>();
+
+            if (token == "Invalid credentials")
             {
-                var token = await _authService.LoginAsync(dto);
-                return Ok(new { Token = token });
+                response.Response(false, "Invalid email or password.", null);
+                return Unauthorized(response);
             }
-            catch (Exception ex)
-            {
-                return Unauthorized(new { Message = ex.Message });
-            }
+
+            response.Response(true, "Login successful.", token);
+            return Ok(response);
         }
 
         [HttpGet("protected")]
@@ -56,23 +61,6 @@ namespace PeopleStrong_API.Controllers
         {
             var userName = User.FindFirstValue(ClaimTypes.Name);
             return Ok(new { Message = $"Welcome, {userName}!" });
-        }
-
-        [HttpGet("{id:guid}")]
-        public async Task<ActionResult<ServiceResponse<UserDto>>> GetUserById(Guid id)
-        {
-            var response = await _authService.GetUserByIdAsync(id);
-            if (response == null)
-            {
-                return NotFound(new ServiceResponse<UserDto> { Success = false, Message = "User not found." });
-            }
-
-            if (!response.Success)
-            {
-                return NotFound(response);
-            }
-
-            return Ok(response);
         }
     }
 }

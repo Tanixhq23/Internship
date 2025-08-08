@@ -27,72 +27,55 @@ namespace Services
             _mapper = mapper;
         }
 
-        public async Task<ServiceResponse<bool>> RegisterAsync(RegisterDto registerDto)
+        public async Task<bool> RegisterAsync(RegisterDto registerDto)
         {
-            var response = new ServiceResponse<bool>();
-
             var existingUser = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
             if (existingUser != null)
             {
-                response.Success = false;
-                response.Message = "User with this email already exists.";
-                return response;
+                return false;
             }
 
-            CreatePasswordHash(registerDto.Password, out byte[] hash, out byte[] salt);
-            var user = _mapper.Map<User>(registerDto);
-            user.PasswordHash = hash;
-            user.PasswordSalt = salt;
+            CreatePasswordHash(registerDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-            await _unitOfWork.Users.AddAsync(user);
+            var newUser = new User
+            {
+                UserName = registerDto.Email, // Assuming UserName is the email
+                Email = registerDto.Email,
+                PasswordHash = passwordHash,
+                PasswordSalt = passwordSalt
+            };
+
+            await _unitOfWork.Users.AddAsync(newUser);
             await _unitOfWork.CompleteAsync();
 
-            response.Data = true;
-            response.Message = "User registered successfully!";
-            return response;
+            return true;
         }
 
-        public async Task<ServiceResponse<string>> LoginAsync(LoginDto loginDto)
+        public async Task<string> LoginAsync(LoginDto loginDto)
         {
-            var response = new ServiceResponse<string>();
+    
+            var userEnt = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
 
+            if (!VerifyPasswordHash(loginDto.Password, userEnt.PasswordHash, userEnt.PasswordSalt)) { 
+            
+                return "Invalid credentials";
+            }
+
+            return CreateJwtToken(userEnt);
+        }
+
+        public async Task<UserDto> GetUserByEmailAsync(LoginDto loginDto)
+        {
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
-            if (user == null)
-            {
-                response.Success = false;
-                response.Message = "Invalid credentials.";
-                return response;
-            }
 
-            if (!VerifyPasswordHash(loginDto.Password, user.PasswordHash, user.PasswordSalt))
-            {
-                response.Success = false;
-                response.Message = "Invalid credentials.";
-                return response;
-            }
-
-            response.Data = CreateJwtToken(user);
-            response.Message = "Login successful!";
-            return response;
+            return _mapper.Map<UserDto>(user);
         }
 
-        // Corrected to accept a Guid ID
-        public async Task<ServiceResponse<UserDto>> GetUserByIdAsync(Guid id)
+        public async Task<UserDto> GetUserByEmailAsync(RegisterDto registerDto)
         {
-            var response = new ServiceResponse<UserDto>();
-            // Assuming your User entity has a UserId property of type Guid
-            var user = await _unitOfWork.Users.GetAsync(u => u.UserId == id);
+            var user = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
 
-            if (user == null)
-            {
-                response.Success = false;
-                response.Message = "User not found.";
-                return response;
-            }
-
-            response.Data = _mapper.Map<UserDto>(user);
-            response.Message = "User fetched successfully.";
-            return response;
+            return _mapper.Map<UserDto>(user);
         }
 
         private void CreatePasswordHash(string password, out byte[] hash, out byte[] salt)
@@ -113,7 +96,6 @@ namespace Services
         {
             var claims = new[]
             {
-                // Corrected to handle a Guid UserId
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Name, user.UserName ?? user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
@@ -127,10 +109,6 @@ namespace Services
                 signingCredentials: creds);
 
             return new JwtSecurityTokenHandler().WriteToken(token);
-        }
-        public Task<ServiceResponse<UserDto>> GetUserByIdAsync(int id)
-        {
-            throw new NotImplementedException();
         }
     }
 }
