@@ -29,6 +29,11 @@ namespace Entity
         [Required(ErrorMessage = "Password salt is required.")]
         public byte[]? PasswordSalt { get; set; }
 
+        // --- New fields for Password Reset functionality ---
+        public string? PasswordResetToken { get; set; }
+        public DateTime? ResetTokenExpires { get; set; }
+        // ---------------------------------------------------
+
         // Foreign Key to the Role table.
         [ForeignKey("Role")]
         public Guid? RoleId { get; set; }

@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Entity; // ✅ Replace with the actual namespace of your Entity classes
+using Entity; 
 
 namespace DTO.Mappers
 {
@@ -19,6 +19,7 @@ namespace DTO.Mappers
             CreateMap<User, RegisterDto>().ReverseMap();
             CreateMap<User, LoginDto>().ReverseMap();
             CreateMap<User, UserDto>().ReverseMap();
+
         }
     }
 }
