@@ -19,7 +19,6 @@ namespace DTO.Mappers
             CreateMap<User, RegisterDto>().ReverseMap();
             CreateMap<User, LoginDto>().ReverseMap();
             CreateMap<User, UserDto>().ReverseMap();
-
         }
     }
 }

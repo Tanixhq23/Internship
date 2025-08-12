@@ -39,7 +39,8 @@ namespace Services
 
             var newUser = new User
             {
-                UserName = registerDto.Email, // Assuming UserName is the email
+                UserName = registerDto.UserName,
+                FullName = registerDto.FullName,
                 Email = registerDto.Email,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt
@@ -53,28 +54,64 @@ namespace Services
 
         public async Task<string> LoginAsync(LoginDto loginDto)
         {
-    
             var userEnt = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
 
-            if (!VerifyPasswordHash(loginDto.Password, userEnt.PasswordHash, userEnt.PasswordSalt)) { 
-            
+            if (userEnt == null || !VerifyPasswordHash(loginDto.Password, userEnt.PasswordHash, userEnt.PasswordSalt))
+            {
                 return "Invalid credentials";
             }
 
             return CreateJwtToken(userEnt);
         }
+        public async Task<bool> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
+        {
+            var user = await _unitOfWork.Users.GetAsync(u => u.Email == forgotPasswordDto.Email);
+            if (user == null)
+            {
+                
+                return true;
+            }
+            user.PasswordResetToken = Convert.ToHexString(RandomNumberGenerator.GetBytes(64));
+            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
+
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.CompleteAsync();
+
+
+            return true;
+        }
+        public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
+        {
+            var user = await _unitOfWork.Users.GetAsync(u =>
+                u.Email == resetPasswordDto.Email &&
+                u.PasswordResetToken == resetPasswordDto.Token);
+
+            if (user == null || user.ResetTokenExpires < DateTime.UtcNow)
+            {
+                return false;
+            }
+            CreatePasswordHash(resetPasswordDto.NewPassword, out byte[] newHash, out byte[] newSalt);
+            user.PasswordHash = newHash;
+            user.PasswordSalt = newSalt;
+
+            user.PasswordResetToken = null;
+            user.ResetTokenExpires = null;
+
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.CompleteAsync();
+
+            return true;
+        }
 
         public async Task<UserDto> GetUserByEmailAsync(LoginDto loginDto)
         {
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
-
             return _mapper.Map<UserDto>(user);
         }
 
         public async Task<UserDto> GetUserByEmailAsync(RegisterDto registerDto)
         {
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
-
             return _mapper.Map<UserDto>(user);
         }
 
