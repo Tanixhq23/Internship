@@ -9,5 +9,7 @@ namespace Services.Interfaces
         Task<string> LoginAsync(LoginDto loginDto);
         Task<UserDto> GetUserByEmailAsync(LoginDto loginDto);
         Task<UserDto> GetUserByEmailAsync(RegisterDto registerDto);
+        Task<bool> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto);
+        Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto);
     }
 }

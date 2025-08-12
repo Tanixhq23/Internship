@@ -20,7 +20,7 @@ namespace Data
         public DbSet<LifeCycleTask> LifeCycleTasks { get; set; }
         public DbSet<JobOpenings> JobOpenings { get; set; }
         public DbSet<Refferals> Refferals { get; set; }
-        public DbSet<Candidates> Candidates { get; set; }
+        public DbSet<Candidates> Candidates { get; set; }  
 
         public ApplicationContext() : base()
         {

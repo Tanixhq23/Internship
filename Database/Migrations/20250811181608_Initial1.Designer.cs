@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Database.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250806143253_Initial1")]
+    [Migration("20250811181608_Initial1")]
     partial class Initial1
     {
         /// <inheritdoc />
@@ -513,9 +513,15 @@ namespace Database.Migrations
                         .IsRequired()
                         .HasColumnType("longblob");
 
+                    b.Property<string>("PasswordResetToken")
+                        .HasColumnType("longtext");
+
                     b.Property<byte[]>("PasswordSalt")
                         .IsRequired()
                         .HasColumnType("longblob");
+
+                    b.Property<DateTime?>("ResetTokenExpires")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid?>("RoleId")
                         .HasColumnType("char(36)");

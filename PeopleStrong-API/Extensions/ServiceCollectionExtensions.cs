@@ -1,8 +1,7 @@
-﻿// Extensions/ServiceCollectionExtensions.cs
-using Data;
+﻿using Data;
 using Data.Interfaces;
 using Data.Repositories;
-using DTO.Mappers; // Assuming your MappingProfile is here
+using DTO.Mappers;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -12,6 +11,7 @@ using Microsoft.OpenApi.Models;
 using Services;
 using Services.Interfaces;
 using System.Text;
+//using Serilog; // Import Serilog
 
 namespace PeopleStrong_API.Extensions
 {
@@ -96,5 +96,20 @@ namespace PeopleStrong_API.Extensions
             });
             return services;
         }
+
+        //public static ConfigureHostBuilder AddSerilogLogging(this ConfigureHostBuilder host, IConfiguration configuration)
+        //{
+        //    host.UseSerilog((context, services, loggerConfiguration) =>
+        //    {
+        //        Log.Logger = new LoggerConfiguration()
+        //                      .MinimumLevel.Information()
+        //                      .WriteTo.Console()
+        //                      .Enrich.FromLogContext()
+        //                      .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
+        //                      .CreateLogger();
+        //    });
+
+        //    return host;
+        //}
     }
 }
