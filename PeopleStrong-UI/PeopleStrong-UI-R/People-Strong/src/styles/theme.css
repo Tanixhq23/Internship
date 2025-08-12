@@ -1,0 +1,15 @@
+:root {
+  --bg-color: #F9F5ED;
+  --navbar-color: #24160E;
+  --button-color: #7E6A52;
+  --button-text: #F6F0EC;
+  --body-text: #3B2E26;
+  --muted-text: #6E615B;
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--body-text);
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+}
