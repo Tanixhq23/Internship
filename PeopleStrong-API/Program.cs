@@ -6,6 +6,16 @@ using PeopleStrong_API.Extensions;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp",
+        policy => policy
+            .WithOrigins("http://localhost:5173") // React dev server
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+    );
+});
+
 
 // Configure Serilog FIRST
 Log.Logger = new LoggerConfiguration()
@@ -32,6 +42,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddTransient<GlobalExceptionHandler>();
 
 var app = builder.Build();
+app.UseCors("AllowReactApp");
+
 
 // Global exception handling middleware
 app.UseMiddleware<GlobalExceptionHandler>();
