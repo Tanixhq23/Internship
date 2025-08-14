@@ -1,16 +1,39 @@
-// src/services/api.js
-import axios from 'axios';
+// src/api.js
 
-const API = axios.create({
-  baseURL: 'http://localhost:5000/api', // Replace with your actual backend URL
-});
+const API_BASE_URL = "https://localhost:7106/api"; // 🔹 Change to your backend URL
 
-// Login API function
-export const loginUser = async (userData) => {
-  try {
-    const response = await API.post('/login', userData);
-    return response.data;
-  } catch (error) {
-    throw error.response?.data?.message || "Login failed";
+// Common POST request function
+async function post(endpoint, data) {
+  const response = await fetch(`${API_BASE_URL}/${endpoint}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(localStorage.getItem("token") && {
+        Authorization: `Bearer ${localStorage.getItem("token")}`
+      })
+    },
+    body: JSON.stringify(data),
+  });
+
+  // Agar response 2xx nahi hai toh error throw karo
+  if (!response.ok) {
+    let errorMsg = "API request failed";
+    try {
+      const errorData = await response.json();
+      errorMsg = errorData.message || errorMsg;
+    } catch {}
+    throw new Error(errorMsg);
   }
-};
+
+  return await response.json();
+}
+
+// ✅ Register API
+export function registerUser(userData) {
+  return post("Auth/register", userData);
+}
+
+// ✅ Login API
+export function loginUser(loginData) {
+  return post("Auth/login", loginData);
+}
