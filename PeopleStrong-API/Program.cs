@@ -1,9 +1,12 @@
+using Common.Email;
+using Entity; // ?? Add this using statement for FrontendSettings
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PeopleStrong_API.Extensions;
 using Serilog;
+using Services; // ?? Add this using statement for MailService if it's not already in scope
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
@@ -25,8 +28,16 @@ Log.Logger = new LoggerConfiguration()
     .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
+// Configure MailSettings from appsettings.json
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
+// ?? Add configuration for FrontendSettings from appsettings.json
+builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
+
+// Register IMailService with its concrete implementation, passing IWebHostEnvironment
+// ?? Updated registration to pass IWebHostEnvironment
 builder.Services.AddTransient<IMailService, Services.MailService>();
+
 
 // Tell the host to use Serilog
 builder.Host.UseSerilog();
