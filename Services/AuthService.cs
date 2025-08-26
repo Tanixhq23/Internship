@@ -1,29 +1,30 @@
-﻿// In Services/AuthService.cs (or wherever your IAuthService is implemented)
+﻿// File: Services/AuthService.cs - Complete and Latest
 
 using AutoMapper;
-using Common;
-using Data.Interfaces; // Assuming IUnitOfWork is defined here
-using DTO; // Assuming RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, UserDto are here
-using Entity; // Assuming your User entity is here
-using Microsoft.EntityFrameworkCore; // For EF Core methods like .AnyAsync, but _unitOfWork abstracts this
+using Common; // Assuming ServiceResponse is defined here
+using Data.Interfaces; // For IUnitOfWork
+using DTO; // For RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto, UserDto
+using Entity; // For User entity
+using Microsoft.EntityFrameworkCore; // For OrderByDescending, FirstOrDefaultAsync
 using Microsoft.Extensions.Configuration; // For JWT configuration
 using Microsoft.IdentityModel.Tokens;
-using Services.Interfaces; // Assuming IAuthService is here
+using Services.Interfaces; // For IAuthService
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
+using System.Security.Cryptography; // For HMACSHA512, RandomNumberGenerator
 using System.Text;
 using System.Threading.Tasks;
 
 namespace Services
 {
-    public class AuthService : IAuthService // Your class implementing IAuthService
+    public class AuthService : IAuthService
     {
         private readonly IUnitOfWork _unitOfWork;
-        private readonly IConfiguration _configuration; // For accessing appsettings.json for Jwt:Key
-        private readonly IMapper _mapper; // For mapping User entity to UserDto
+        private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
-        // Constructor to inject IUnitOfWork, IConfiguration, and IMapper
+        private const int STARTING_USER_ID = 120000; // Define your starting ID for new users
+
         public AuthService(IUnitOfWork unitOfWork, IConfiguration configuration, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
@@ -31,122 +32,115 @@ namespace Services
             _mapper = mapper;
         }
 
-        // --- RegisterAsync Method ---
         public async Task<bool> RegisterAsync(RegisterDto registerDto)
         {
-            // Check if user with this email already exists using Unit of Work's GetAsync
             var existingUser = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
             if (existingUser != null)
             {
                 return false; // User with this email already exists
             }
 
-            // Create password hash and salt
             CreatePasswordHash(registerDto.Password, out byte[] passwordHash, out byte[] passwordSalt);
 
-            // Create new user entity
+            // --- Custom User ID Generation Logic ---
+            // Find the maximum existing UserId and increment it.
+            // If no users exist, start from STARTING_USER_ID.
+            int nextUserId = STARTING_USER_ID;
+            var lastUser = await _unitOfWork.Users.Query().OrderByDescending(u => u.UserId).FirstOrDefaultAsync();
+            if (lastUser != null)
+            {
+                nextUserId = Math.Max(STARTING_USER_ID, lastUser.UserId + 1);
+            }
+            // --- End Custom User ID Generation Logic ---
+
             var newUser = new User
             {
+                UserId = nextUserId, // ⬅️ CRUCIAL: Assign the generated User ID
                 UserName = registerDto.UserName,
                 FullName = registerDto.FullName,
                 Email = registerDto.Email,
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
-                CreatedAt = DateTime.UtcNow, // Assuming CreatedAt is part of your User model
-                // Other properties like EmpId, RoleId, CreatedBy should be handled based on your application's logic
+                CreatedAt = DateTime.UtcNow,
+                //CreatedBy = nextUserId // Assuming the user creating themselves is the creator
             };
 
-            // Add the new user via Unit of Work and complete the transaction
             await _unitOfWork.Users.AddAsync(newUser);
-            await _unitOfWork.CompleteAsync(); // Save changes to the database
+            await _unitOfWork.CompleteAsync();
 
             return true; // Registration successful
         }
 
-        // --- LoginAsync Method ---
         public async Task<string> LoginAsync(LoginDto loginDto)
         {
-            // Retrieve user by email using Unit of Work
             var userEnt = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
 
-            if (userEnt == null || !VerifyPasswordHash(loginDto.Password, userEnt.PasswordHash, userEnt.PasswordSalt))
+            if (userEnt == null)
             {
-                return "Invalid credentials"; // User not found or password does not match
+                return "Invalid credentials"; // User not found by email
             }
 
-            // Generate and return a JWT token upon successful login
+            if (!VerifyPasswordHash(loginDto.Password, userEnt.PasswordHash, userEnt.PasswordSalt))
+            {
+                return "Invalid credentials"; // Password does not match
+            }
+
             return CreateJwtToken(userEnt);
         }
 
-        // --- ForgotPasswordAsync Method ---
         public async Task<string> ForgotPasswordAsync(ForgotPasswordDto forgotPasswordDto)
         {
-            // 1. Find the user by email using Unit of Work
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == forgotPasswordDto.Email);
 
             if (user == null)
             {
-                // IMPORTANT: Do NOT indicate if the email was not found to prevent email enumeration attacks.
-                // Return null so the controller can send a generic message.
-                return null;
+                return null; // Return null to prevent email enumeration attacks.
             }
 
-            // 2. Generate a secure, unique password reset token
-            // Using Base64String for better URL compatibility compared to HexString for tokens
-            string resetToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64)); // Generates a 64-byte random token, Base64 encoded
-
-            // 3. Store the token and its expiry in the user's database record
+            string resetToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
             user.PasswordResetToken = resetToken;
-            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1); // Token valid for 1 hour from now
+            user.ResetTokenExpires = DateTime.UtcNow.AddHours(1);
 
-            // 4. Update the user via Unit of Work and complete the transaction
-            _unitOfWork.Users.Update(user); // Assuming Update method marks entity as modified
-            await _unitOfWork.CompleteAsync(); // Save changes to the database
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.CompleteAsync();
 
-            // 5. Return the generated token string
             return resetToken;
         }
 
-        // --- ResetPasswordAsync Method ---
         public async Task<bool> ResetPasswordAsync(ResetPasswordDto resetPasswordDto)
         {
-            // Find the user by email AND token, and check if the token is still valid/not expired
             var user = await _unitOfWork.Users.GetAsync(u =>
                 u.Email == resetPasswordDto.Email &&
-                u.PasswordResetToken == resetPasswordDto.Token); // GetAsync with predicate
+                u.PasswordResetToken == resetPasswordDto.Token);
 
             if (user == null || user.ResetTokenExpires < DateTime.UtcNow)
             {
                 return false; // Invalid token, email mismatch, or expired token
             }
 
-            // Hash the new password and update user record
             CreatePasswordHash(resetPasswordDto.NewPassword, out byte[] newHash, out byte[] newSalt);
             user.PasswordHash = newHash;
             user.PasswordSalt = newSalt;
 
-            // Clear the token and its expiry after successful reset
             user.PasswordResetToken = null;
             user.ResetTokenExpires = null;
 
-            // Update the user via Unit of Work and complete the transaction
             _unitOfWork.Users.Update(user);
             await _unitOfWork.CompleteAsync();
 
             return true; // Password successfully reset
         }
 
-        // --- GetUserByEmailAsync methods (used internally or exposed for mapping DTOs) ---
         public async Task<UserDto> GetUserByEmailAsync(LoginDto loginDto)
         {
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == loginDto.Email);
-            return _mapper.Map<UserDto>(user); // Maps User entity to UserDto
+            return _mapper.Map<UserDto>(user);
         }
 
         public async Task<UserDto> GetUserByEmailAsync(RegisterDto registerDto)
         {
             var user = await _unitOfWork.Users.GetAsync(u => u.Email == registerDto.Email);
-            return _mapper.Map<UserDto>(user); // Maps User entity to UserDto
+            return _mapper.Map<UserDto>(user);
         }
 
         // --- Password Hashing Helper Method ---
@@ -160,8 +154,7 @@ namespace Services
         // --- Password Verification Helper Method ---
         private bool VerifyPasswordHash(string password, byte[] storedHash, byte[] storedSalt)
         {
-            // Add null checks for storedHash/Salt for robustness
-            if (storedHash == null || storedSalt == null)
+            if (storedHash == null || storedSalt == null || password == null)
             {
                 return false;
             }
@@ -176,12 +169,11 @@ namespace Services
         {
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), // Assuming UserId is the ID property
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()), // UserId (int) converted to string for claim
                 new Claim(ClaimTypes.Name, user.UserName ?? user.Email),
                 new Claim(ClaimTypes.Email, user.Email),
             };
 
-            // Retrieve JWT key from configuration
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var token = new JwtSecurityToken(
@@ -193,3 +185,4 @@ namespace Services
         }
     }
 }
+ 

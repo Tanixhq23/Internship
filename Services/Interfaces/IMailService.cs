@@ -6,6 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 public interface IMailService
 {
-    Task SendEmailAsync(MailRequest mailRequest);
-    Task SendWelcomeEmailAsync(WelcomeRequest request);
+    Task<bool> SendEmailAsync(MailRequest mailRequest);
+    Task<bool> SendWelcomeEmailAsync(WelcomeRequest request);
 }

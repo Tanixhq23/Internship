@@ -12,13 +12,17 @@ namespace Data
         {
             _context = context;
             Users = new UserRepository(_context);
+            AttendanceRecords = new AttendanceRepository(_context);
         }
         public IUserRepository Users { get; set;}
+
+        public IAttendanceRepository AttendanceRecords { get; set; }
 
         public async Task CompleteAsync()
         {
             await _context.SaveChangesAsync();
         }
+
 
         public void Dispose()
         {
