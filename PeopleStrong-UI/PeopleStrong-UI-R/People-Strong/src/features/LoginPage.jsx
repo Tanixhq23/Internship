@@ -1,8 +1,8 @@
-// src/features/LoginPage.jsx
-import React, { useState } from "react";
-import { loginUser } from "../services/api"; // 👈 Import API function
 
-export default function LoginPage({ onSwitch }) {
+import React, { useState } from "react";
+import { loginUser } from "../services/api"; 
+
+export default function LoginPage({ onSwitch, onLoginSuccess }) {
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
@@ -21,8 +21,14 @@ export default function LoginPage({ onSwitch }) {
     setLoading(true);
     try {
       const res = await loginUser(credentials);
-      alert("Login successful!");
-      console.log("Token:", res.token); // You can store token here
+
+     
+      if (res.token) {
+        localStorage.setItem("token", res.token); 
+        onLoginSuccess(); 
+      } else {
+        alert("Invalid response, try again!");
+      }
     } catch (err) {
       alert(err.message || "Login failed");
     } finally {

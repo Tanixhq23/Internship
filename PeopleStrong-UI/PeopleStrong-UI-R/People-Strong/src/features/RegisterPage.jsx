@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { registerUser } from "../services/api"; // 👈 Import API function
+import { registerUser } from "../services/api";
 
 export default function RegisterPage({ onSwitch }) {
   // State variables for each field
@@ -19,7 +19,7 @@ export default function RegisterPage({ onSwitch }) {
       });
 
       alert("Registration successful!");
-      onSwitch("login"); // Redirect to login after success
+      onSwitch("login"); 
     } catch (error) {
       alert(error.message);
     }
