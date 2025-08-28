@@ -37,3 +37,4 @@ export function registerUser(userData) {
 export function loginUser(loginData) {
   return post("Auth/login", loginData);
 }
+  

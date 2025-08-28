@@ -1,0 +1,62 @@
+ .card-container.attendance-card {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.attendance-card h3 {
+  margin-top: 0;
+  color:  #3498db; 
+}
+
+.card-content {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.status {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+.status.punched-in {
+  color:  #3498db;
+}
+
+.status.punched-out {
+  color:  #3498db;
+}
+
+.punch-time {
+  font-size: 1em;
+  color: #777;
+  margin-top: 10px;
+}
+
+.buttons {
+  margin-top: 25px;
+}
+
+.punch-button {
+  padding: 12px 25px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  font-size: 1.1em;
+  cursor: pointer;
+  background-color: #7E6A52;
+  margin: 0 8px;
+  transition: background-color 0.3s;}
+.punch-button:disabled {
+  background-color: #7E6A52;
+  cursor: not-allowed;
+}
+
+.punch-in {
+  background-color: #7E6A52;
+}
+
+.punch-out {
+  background-color: #7E6A52;
+}

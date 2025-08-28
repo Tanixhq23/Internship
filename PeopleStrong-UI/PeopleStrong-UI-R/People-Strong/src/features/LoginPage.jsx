@@ -1,14 +1,17 @@
 // src/features/LoginPage.jsx
 import React, { useState } from "react";
-import { loginUser } from "../services/api"; // 👈 Import API function
+import { loginUser } from "../services/api";
+import { useNavigate } from "react-router-dom";
+import "../styles/LoginPage.css";
 
-export default function LoginPage({ onSwitch }) {
+export default function LoginPage() {
   const [credentials, setCredentials] = useState({
     email: "",
     password: "",
   });
 
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setCredentials({
@@ -22,7 +25,9 @@ export default function LoginPage({ onSwitch }) {
     try {
       const res = await loginUser(credentials);
       alert("Login successful!");
-      console.log("Token:", res.token); // You can store token here
+      console.log("Token:", res.token);
+      // Navigate to dashboard after successful login
+      navigate("/dashboard");
     } catch (err) {
       alert(err.message || "Login failed");
     } finally {
@@ -32,41 +37,52 @@ export default function LoginPage({ onSwitch }) {
 
   return (
     <div className="form-container">
-      <h1 className="project-name">PeopleStrong</h1>
-      <h2>Login</h2>
+      <div className="login-box">
+        <h1 className="project-name">PeopleStrong</h1>
+        <h2>Login</h2>
 
-      <input
-        type="email"
-        name="email"
-        placeholder="Email"
-        value={credentials.email}
-        onChange={handleChange}
-      />
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleLogin();
+          }}
+        >
+          <input
+            type="email"
+            name="email"
+            placeholder="Email"
+            value={credentials.email}
+            onChange={handleChange}
+            required
+          />
 
-      <input
-        type="password"
-        name="password"
-        placeholder="Password"
-        value={credentials.password}
-        onChange={handleChange}
-      />
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={credentials.password}
+            onChange={handleChange}
+            required
+          />
 
-      <button className="btn" onClick={handleLogin} disabled={loading}>
-        {loading ? "Logging in..." : "Login"}
-      </button>
+          <button className="login-btn" type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Login"}
+          </button>
+        </form>
 
-      <p className="muted-text">
-        Don’t have an account?{" "}
-        <span className="link" onClick={() => onSwitch("register")}>
-          Create Account
-        </span>
-      </p>
+        <p className="muted-text">
+          Don’t have an account?{" "}
+          <span className="link" onClick={() => navigate("/register")}>
+            Create Account
+          </span>
+        </p>
 
-      <p className="muted-text">
-        <span className="link" onClick={() => onSwitch("forgot")}>
-          Forgot Password?
-        </span>
-      </p>
+        <p className="muted-text">
+          <span className="link" onClick={() => navigate("/forgot-password")}>
+            Forgot Password?
+          </span>
+        </p>
+      </div>
     </div>
   );
 }

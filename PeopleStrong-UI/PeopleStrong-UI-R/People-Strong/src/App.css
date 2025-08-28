@@ -1,24 +1,24 @@
 body {
   background-color: #F9F5ED;
   font-family: Arial, sans-serif;
-  display: flex;
+  /* display: flex; */
   justify-content: center;
   align-items: center;
   height: 100vh;
   margin: 0;
 }
 
-.auth-container {
+/* .auth-container {
   display: flex;
   justify-content: center;
   align-items: center;
-}
+} */
 
 .auth-box {
   background: white;
-  padding: 2rem;
+  /* padding: 2rem; */
   border-radius: 12px;
-  width: 350px;
+  /* width: 350px; */
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
 }
 

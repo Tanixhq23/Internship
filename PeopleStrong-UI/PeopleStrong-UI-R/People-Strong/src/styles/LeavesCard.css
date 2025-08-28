@@ -1,0 +1,15 @@
+.leaves-card {
+  height: 100%;
+}
+
+.leaves-card h3 {
+  margin-top: 0;
+  color: #3498db;
+}
+
+.leave-status-box {
+  background-color: #ecf0f1;
+  height: 70px;
+  border-radius: 5px;
+  margin-bottom: 10px;
+}
