@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Database.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250813074016_AddPasswordResetFieldsToUser")]
-    partial class AddPasswordResetFieldsToUser
+    [Migration("20250826110443_MakeUserIntPropertiesNullable")]
+    partial class MakeUserIntPropertiesNullable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -27,38 +27,55 @@ namespace Database.Migrations
 
             modelBuilder.Entity("Entity.AttendanceRecord", b =>
                 {
-                    b.Property<Guid>("RecordId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                        .HasColumnType("int");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("Date")
-                        .HasColumnType("datetime(6)");
+                    b.Property<int>("EmpId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid>("EmpId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("PunchInLocation")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
 
                     b.Property<DateTime>("PunchInTime")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("PunchOutLocation")
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
                     b.Property<DateTime?>("PunchOutTime")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("ShiftId")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("ShiftId")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("int");
 
-                    b.HasKey("RecordId");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("AttendanceRecords");
                 });
@@ -85,7 +102,6 @@ namespace Database.Migrations
                         .HasColumnType("varchar(255)");
 
                     b.Property<string>("ResumeUrl")
-                        .IsRequired()
                         .HasColumnType("longtext");
 
                     b.Property<DateTime>("UpdatedAt")
@@ -129,22 +145,17 @@ namespace Database.Migrations
 
             modelBuilder.Entity("Entity.Employee", b =>
                 {
-                    b.Property<Guid>("EmpId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<int>("EmpId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("int");
 
-                    b.Property<Guid?>("DeptId")
-                        .HasColumnType("char(36)");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("longtext");
+                    b.Property<int?>("DeptId")
+                        .HasColumnType("int");
 
                     b.Property<string>("FullName")
                         .IsRequired()
@@ -156,25 +167,42 @@ namespace Database.Migrations
 
                     b.Property<string>("JobRole")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
 
-                    b.Property<Guid?>("ManagerId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("ManagerId")
+                        .HasColumnType("int");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("OfficeEmail")
                         .IsRequired()
-                        .HasColumnType("longtext");
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<Guid?>("ShiftId")
-                        .HasColumnType("char(36)");
+                    b.Property<string>("PersonalEmail")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<int?>("ShiftId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("varchar(50)");
+
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("UpdatedByUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.HasKey("EmpId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Employees");
                 });
@@ -487,23 +515,22 @@ namespace Database.Migrations
 
             modelBuilder.Entity("Entity.User", b =>
                 {
-                    b.Property<Guid>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("char(36)");
+                    b.Property<int>("UserId")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("CreatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int>("CreatedBy")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("varchar(255)");
 
-                    b.Property<Guid?>("EmpId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("EmpId")
+                        .HasColumnType("int");
 
                     b.Property<string>("FullName")
                         .HasMaxLength(100)
@@ -523,23 +550,51 @@ namespace Database.Migrations
                     b.Property<DateTime?>("ResetTokenExpires")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("RoleId")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("RoleId")
+                        .HasColumnType("int");
 
-                    b.Property<DateTime>("UpdatedAt")
+                    b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("char(36)");
+                    b.Property<int?>("UpdatedBy")
+                        .HasColumnType("int");
 
                     b.Property<string>("UserName")
-                        .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
                     b.HasKey("UserId");
 
+                    b.HasIndex("EmpId")
+                        .IsUnique();
+
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Entity.AttendanceRecord", b =>
+                {
+                    b.HasOne("Entity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Entity.Employee", b =>
+                {
+                    b.HasOne("Entity.User", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("Entity.User", b =>
+                {
+                    b.HasOne("Entity.Employee", null)
+                        .WithOne()
+                        .HasForeignKey("Entity.User", "EmpId")
+                        .OnDelete(DeleteBehavior.SetNull);
                 });
 #pragma warning restore 612, 618
         }

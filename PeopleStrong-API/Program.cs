@@ -1,12 +1,13 @@
 using Common.Email;
-using Entity; // ?? Add this using statement for FrontendSettings
+using Entity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using PeopleStrong_API.Extensions;
 using Serilog;
-using Services; // ?? Add this using statement for MailService if it's not already in scope
+using Services;
+using Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddCors(options =>
@@ -31,13 +32,20 @@ Log.Logger = new LoggerConfiguration()
 // Configure MailSettings from appsettings.json
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
 
-// ?? Add configuration for FrontendSettings from appsettings.json
+// Configure FrontendSettings from appsettings.json
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
 
-// Register IMailService with its concrete implementation, passing IWebHostEnvironment
-// ?? Updated registration to pass IWebHostEnvironment
+// Register IMailService with its concrete implementation
 builder.Services.AddTransient<IMailService, Services.MailService>();
 
+// Register IAttendanceService
+builder.Services.AddTransient<IAttendanceService, AttendanceService>();
+
+// Register IAuthService
+builder.Services.AddTransient<IAuthService, AuthService>();
+
+// Register IEmployeeService
+builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
 // Tell the host to use Serilog
 builder.Host.UseSerilog();
@@ -52,6 +60,21 @@ builder.Services.AddDatabaseConfiguration(builder.Configuration);
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddTransient<GlobalExceptionHandler>();
 
+// ?? CRITICAL: Configure CORS policies for your frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin", // Name your policy
+        policyBuilder =>
+        {
+            // ?? Replace "http://localhost:4200" with your actual Angular frontend URL
+            policyBuilder.WithOrigins("http://localhost:4200")
+                   .AllowAnyHeader()
+                   .AllowAnyMethod()
+                   .AllowCredentials(); // Essential for sending cookies/JWT with credentials
+        });
+});
+
+
 var app = builder.Build();
 app.UseCors("AllowReactApp");
 
@@ -65,11 +88,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
-app.UseAuthentication();
-app.UseAuthorization();
+app.UseHttpsRedirection(); // Redirect HTTP requests to HTTPS
 
-app.MapControllers();
+app.UseRouting(); // Enables attribute routing
+
+// ?? CRITICAL: Enable CORS middleware BEFORE UseAuthentication and UseAuthorization
+app.UseCors("AllowSpecificOrigin"); // Use the policy you defined
+
+
+app.UseAuthentication(); // Authenticates the user based on the JWT token
+app.UseAuthorization();  // Authorizes the user based on roles/policies
+
+app.MapControllers(); // Maps controller routes
 
 // Example test log
 app.MapGet("/", (ILogger<Program> logger) =>

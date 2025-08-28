@@ -1,39 +1,47 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// File: Entity/AttendanceRecord.cs - Verified and Corrected
+
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Entity
 {
-    public  class AttendanceRecord
+    public class AttendanceRecord
     {
         [Key]
-        public Guid RecordId { get; set; } = Guid.NewGuid();
+        public int Id { get; set; } // Unique identifier for the attendance record
 
-        // The date of the attendance record.
-        public DateTime Date { get; set; }
+        [Required]
+        public int UserId { get; set; } // ⬅️ THIS IS THE CRITICAL MISSING COLUMN
+        // public virtual User User { get; set; } // Navigation property to the User entity
 
-        // The time the employee punched in.
-        public DateTime PunchInTime { get; set; }
+        [Required]
+        public DateTime PunchInTime { get; set; } // Timestamp when the user punched in
 
-        // The time the employee punched out. Nullable if the employee hasn't punched out yet.
-        public DateTime? PunchOutTime { get; set; }
+        public DateTime? PunchOutTime { get; set; } // Nullable timestamp when the user punched out
 
-        // Foreign Key to the Employee table.
+        [StringLength(50)]
+        public string? PunchInLocation { get; set; } // Optional: Store location info (e.g., IP address, GPS coords)
+
+        [StringLength(50)]
+        public string? PunchOutLocation { get; set; } // Optional: Store location info for punch out
+
+        [Required]
+        [StringLength(20)]
+        public string Status { get; set; } = "PunchedIn"; // Default status upon creation'
+
+        // Foreign Key to the Employee table. If EmpId is intended as an int FK, ensure it matches your Employee.Id type.
         [ForeignKey("Employee")]
-        public Guid EmpId { get; set; }
+        public int EmpId { get; set; } // ⬅️ Assuming this should be int for consistency
 
-        // Foreign Key to the Shifts table.
+        // Foreign Key to the Shifts table. If ShiftId is intended as an int FK, ensure it matches your Shift.Id type.
         [ForeignKey("Shift")]
-        public Guid? ShiftId { get; set; }
+        public int ShiftId { get; set; } // ⬅️ Assuming this should be int for consistency
 
-        // Audit fields for tracking creation and updates.
+        // Audit fields
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public Guid? CreatedBy { get; set; }
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public Guid? UpdatedBy { get; set; }
+        public int CreatedByUserId { get; set; } // Who performed the punch-in (if different from UserId)
+        public DateTime? UpdatedAt { get; set; }
+        public int? UpdatedByUserId { get; set; }
     }
 }

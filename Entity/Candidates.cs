@@ -15,15 +15,15 @@ namespace Entity
         // The full name of the candidate.
         [Required]
         [StringLength(255)]
-        public string FullName { get; set; }
+        public string? FullName { get; set; }
 
         // The candidate's email address.
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         // A URL to the candidate's resume.
-        public string ResumeUrl { get; set; }
+        public string? ResumeUrl { get; set; }
 
         // Audit fields for tracking creation and updates.
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

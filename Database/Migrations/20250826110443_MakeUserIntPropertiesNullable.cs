@@ -5,7 +5,7 @@
 namespace Database.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPasswordResetFieldsToUser : Migration
+    public partial class MakeUserIntPropertiesNullable : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

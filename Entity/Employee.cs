@@ -1,55 +1,55 @@
-﻿using System;
-using System.Collections.Generic;
+﻿// File: Entity/Employee.cs (Updated to include Status property)
+
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Entity
 {
     public class Employee
     {
         [Key]
-        public Guid EmpId { get; set; } = Guid.NewGuid();
+        [DatabaseGenerated(DatabaseGeneratedOption.None)] // For custom or sequential EmpId
+        public int EmpId { get; set; } // Unique identifier for the employee (e.g., EMP-120000)
 
-        // Employee's full name.
         [Required]
         [StringLength(255)]
-        public string FullName { get; set; }
+        public string FullName { get; set; } = string.Empty;
 
-        // Employee's email address, which can be used as a unique identifier.
         [Required]
         [EmailAddress]
-        public string Email { get; set; }
+        [StringLength(255)]
+        public string PersonalEmail { get; set; } = string.Empty; // Employee's personal email (for onboarding)
 
-        // Employee's phone number.
-        [Phone]
-        public string Phone { get; set; }
+        [Required]
+        [EmailAddress]
+        [StringLength(255)]
+        public string OfficeEmail { get; set; } = string.Empty; // The employee's official company email
 
-        // The job title or role of the employee.
-        public string JobRole { get; set; }
+        [Required]
+        [StringLength(100)]
+        public string JobRole { get; set; } = string.Empty;
 
-        // The date the employee was hired.
+        [Required]
         public DateTime HireDate { get; set; }
 
-        // Foreign Key to the Department table.
-        [ForeignKey("Department")]
-        public Guid? DeptId { get; set; }
+        [ForeignKey("User")] // Link to the User entity for authentication
+        public int UserId { get; set; } // Link to the User entity
 
-        // Foreign Key to the Employee table for the employee's manager.
-        [ForeignKey("Manager")]
-        public Guid? ManagerId { get; set; }
+        // ⬅️ Add this new Status property
+        [Required]
+        [StringLength(50)]
+        public string Status { get; set; } = "Onboarding"; // e.g., "Onboarding", "Active", "On Leave", "Terminated"
 
-        // Foreign Key to a hypothetical Shift table (not in provided schema but referenced).
-        [ForeignKey("Shift")]
-        public Guid? ShiftId { get; set; }
+        // Optional: Other fields
+        public int? DeptId { get; set; } // Foreign Key to Department
+        public int? ManagerId { get; set; } // Foreign Key to another Employee (manager)
+        public int? ShiftId { get; set; } // Foreign Key to Shift
 
-        // Audit fields for tracking creation and updates.
+        // Audit fields
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public Guid? CreatedBy { get; set; }
-        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-        public Guid? UpdatedBy { get; set; }
-
+        public int CreatedByUserId { get; set; } // HR's User ID who onboarded
+        public DateTime? UpdatedAt { get; set; }
+        public int? UpdatedByUserId { get; set; }
     }
 }
