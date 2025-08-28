@@ -1,68 +1,73 @@
-using Common.Email; // Assuming MailSettings and FrontendSettings are in Common.Email or Entity
-using Entity; // For FrontendSettings, WelcomeRequest (if defined here)
+using Common.Email;
+using Entity;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using PeopleStrong_API.Extensions; // For custom extensions like AddSwaggerDocumentation, AddApplicationServices, AddDatabaseConfiguration, AddJwtAuthentication
+using PeopleStrong_API.Extensions;
 using Serilog;
-using Services; // For AuthService, MailService, AttendanceService, EmployeeService
-using Services.Interfaces; // For IAuthService, IMailService, IAttendanceService, IEmployeeService
-using Data; // For ApplicationContext (if not already referenced)
-using Microsoft.EntityFrameworkCore; // For UseMySql
+using Services;
+using Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure Serilog FIRST for robust logging
+// Configure Serilog FIRST
 Log.Logger = new LoggerConfiguration()
     .MinimumLevel.Information()
     .WriteTo.Console()
     .Enrich.FromLogContext()
-    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day) // ?? Ensure this path is correct
+    .WriteTo.File("Logs/log.txt", rollingInterval: RollingInterval.Day)
     .CreateLogger();
 
-// Configure MailSettings and FrontendSettings from appsettings.json
+// Configure MailSettings from appsettings.json
 builder.Services.Configure<MailSettings>(builder.Configuration.GetSection("MailSettings"));
+
+// Configure FrontendSettings from appsettings.json
 builder.Services.Configure<FrontendSettings>(builder.Configuration.GetSection("FrontendSettings"));
 
-// Register your services for Dependency Injection
+// Register IMailService with its concrete implementation
 builder.Services.AddTransient<IMailService, Services.MailService>();
-builder.Services.AddTransient<IAttendanceService, AttendanceService>();
-builder.Services.AddTransient<IAuthService, AuthService>();
-// Assuming you have an IEmployeeService and EmployeeService for onboarding/offboarding
-//builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
+// Register IAttendanceService
+builder.Services.AddTransient<IAttendanceService, AttendanceService>();
+
+// Register IAuthService
+builder.Services.AddTransient<IAuthService, AuthService>();
+
+// Register IEmployeeService
+builder.Services.AddTransient<IEmployeeService, EmployeeService>();
 
 // Tell the host to use Serilog
 builder.Host.UseSerilog();
 
-// Add controllers for API endpoints
+// Register services
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer(); // For Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
 
-// Configure CORS policies
+builder.Services.AddSwaggerDocumentation();
+builder.Services.AddApplicationServices();
+builder.Services.AddDatabaseConfiguration(builder.Configuration);
+builder.Services.AddJwtAuthentication(builder.Configuration);
+builder.Services.AddTransient<GlobalExceptionHandler>();
+
+// ?? CRITICAL: Configure CORS policies for your frontend
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", // Name your policy
-        builder =>
+        policyBuilder =>
         {
-            builder.WithOrigins("http://localhost:4200") // ?? Your Angular frontend's exact origin
+            // ?? Replace "http://localhost:4200" with your actual Angular frontend URL
+            policyBuilder.WithOrigins("http://localhost:4200")
                    .AllowAnyHeader()
                    .AllowAnyMethod()
                    .AllowCredentials(); // Essential for sending cookies/JWT with credentials
         });
 });
 
-// Add custom extension methods for various configurations
-builder.Services.AddSwaggerDocumentation();
-builder.Services.AddApplicationServices(); // Likely includes other repositories/services
-builder.Services.AddDatabaseConfiguration(builder.Configuration); // Configures DbContext
-builder.Services.AddJwtAuthentication(builder.Configuration); // Configures JWT authentication
-builder.Services.AddTransient<GlobalExceptionHandler>(); // For global error handling
 
 var app = builder.Build();
 
-// Global exception handling middleware (should be very early in the pipeline)
+// Global exception handling middleware
 app.UseMiddleware<GlobalExceptionHandler>();
 
 if (app.Environment.IsDevelopment())
@@ -75,19 +80,21 @@ app.UseHttpsRedirection(); // Redirect HTTP requests to HTTPS
 
 app.UseRouting(); // Enables attribute routing
 
-// ?? NEW: Enable CORS middleware BEFORE UseAuthentication and UseAuthorization
+// ?? CRITICAL: Enable CORS middleware BEFORE UseAuthentication and UseAuthorization
 app.UseCors("AllowSpecificOrigin"); // Use the policy you defined
 
-app.UseAuthentication(); // ?? Authenticates the user based on the JWT token
-app.UseAuthorization();  // ?? Authorizes the user based on roles/policies
+
+app.UseAuthentication(); // Authenticates the user based on the JWT token
+app.UseAuthorization();  // Authorizes the user based on roles/policies
 
 app.MapControllers(); // Maps controller routes
 
-// Example test log endpoint
+// Example test log
 app.MapGet("/", (ILogger<Program> logger) =>
 {
     logger.LogInformation("Hello from logger at {time}", DateTime.UtcNow);
     return "Logging Works!";
 });
 
+// Run the app
 app.Run();

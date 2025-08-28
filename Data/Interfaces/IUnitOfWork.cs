@@ -7,6 +7,7 @@ namespace Data.Interfaces
     {
         public IUserRepository Users { get; set; }
         public IAttendanceRepository AttendanceRecords { get; set; }
+        public IEmployeeRepository Employees { get; set; }
         Task CompleteAsync();
     }
 }
